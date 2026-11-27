@@ -7,7 +7,7 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
-import fitz  # PyMuPDF
+import pymupdf as fitz
 from charset_normalizer import from_bytes
 from docx import Document as DocxDocument
 from docx.oxml.table import CT_Tbl

@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', '"Inter"', "system-ui", "sans-serif"],
+        sans: ['"Google Sans"', '"Google Sans Text"', '"Roboto"', '"Plus Jakarta Sans"', "system-ui", "sans-serif"],
         mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
     },

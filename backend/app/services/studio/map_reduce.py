@@ -113,7 +113,7 @@ async def build_studio_context(
     all_chunks, corpus_text = load_studio_chunks(
         db, notebook_id=notebook_id, source_ids=source_ids
     )
-    rep_chunks = select_representative_chunks(all_chunks, max_chunks=24)
+    rep_chunks = select_representative_chunks(all_chunks, max_chunks=16)
 
     formatted_blocks = [
         f"[{_format_ref(ch)}]\n{ch.text}" for ch in rep_chunks
@@ -124,12 +124,12 @@ async def build_studio_context(
     if total_chars <= 5000:
         return "\n\n---\n\n".join(formatted_blocks), corpus_text
 
-    # Map stage: group representative chunks into ~3200-char batches and extract key points
+    # Map stage: group representative chunks into ~6500-char batches (fits cleanly in num_ctx=8192)
     batches: list[list[str]] = []
     current_batch: list[str] = []
     current_len = 0
     for block in formatted_blocks:
-        if current_batch and current_len + len(block) > 3200:
+        if current_batch and current_len + len(block) > 6500:
             batches.append(current_batch)
             current_batch = [block]
             current_len = len(block)

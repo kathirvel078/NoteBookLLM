@@ -83,11 +83,11 @@ def _synth_piper(
 
 def _synth_pyttsx3(turns: list[AudioTurn], out_path: Path) -> None:
     try:
-        import pythoncom  # type: ignore[import-untyped]
+        import pythoncom
 
         pythoncom.CoInitialize()
     except Exception:
-        pythoncom = None  # type: ignore[assignment]
+        pythoncom = None
 
     try:
         import pyttsx3

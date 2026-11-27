@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     ollama_num_ctx: int = 8192
     ollama_chat_temperature: float = 0.2
     ollama_studio_temperature: float = 0.3
-    ollama_timeout_seconds: float = 120.0
+    ollama_timeout_seconds: float = 180.0
 
     # Local HuggingFace sentence-transformers
     embedding_model: str = "BAAI/bge-small-en-v1.5"

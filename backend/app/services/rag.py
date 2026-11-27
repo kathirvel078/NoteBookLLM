@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from typing import Any
 
 from pydantic import BaseModel
@@ -123,6 +123,16 @@ def postprocess_citations(
     cleaned = re.sub(r" {2,}", " ", cleaned).strip()
     used_citations = [by_idx[i] for i in used_indices if i in by_idx]
     return cleaned, used_citations
+
+
+def ensure_grounded_citations(
+    answer: str, citations: list[Citation], all_citations: list[Citation]
+) -> tuple[str, list[Citation]]:
+    """Ensure grounded responses remain inspectable when a local model omits [n] markers."""
+    if not answer or answer == NO_RELEVANT_INFO_MSG or citations or not all_citations:
+        return answer, citations
+    markers = " ".join(f"[{citation.index}]" for citation in all_citations)
+    return f"{answer.rstrip()}\n\nSources: {markers}", all_citations
 
 
 def load_trimmed_history(
@@ -274,6 +284,10 @@ async def run_chat(
     if not cleaned_answer:
         cleaned_answer = NO_RELEVANT_INFO_MSG
         used_citations = []
+    else:
+        cleaned_answer, used_citations = ensure_grounded_citations(
+            cleaned_answer, used_citations, all_citations
+        )
 
     followups = await generate_follow_up_questions(
         question=message, answer=cleaned_answer, chunks=chunks, ollama_svc=ollama_svc
@@ -308,7 +322,7 @@ async def stream_chat_events(
     source_ids: list[str] | None,
     ollama_svc: OllamaService,
     settings: Settings | None = None,
-) -> AsyncIterator[str]:
+) -> AsyncGenerator[str, None]:
     """Yield SSE events (sources -> token* -> done | error) for POST /api/chat/stream."""
     cfg = settings or get_settings()
     if db.get(Notebook, notebook_id) is None:
@@ -380,6 +394,10 @@ async def stream_chat_events(
     if not cleaned_answer:
         cleaned_answer = NO_RELEVANT_INFO_MSG
         used_citations = []
+    else:
+        cleaned_answer, used_citations = ensure_grounded_citations(
+            cleaned_answer, used_citations, all_citations
+        )
 
     followups = await generate_follow_up_questions(
         question=message, answer=cleaned_answer, chunks=chunks, ollama_svc=ollama_svc

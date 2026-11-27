@@ -30,19 +30,27 @@ class EmbeddingService:
     def active_model_name(self) -> str:
         return self._active_model_name
 
+    def _load_sentence_transformer(self, model_name: str):
+        from sentence_transformers import SentenceTransformer
+
+        try:
+            # Prefer local HuggingFace cache first so offline runs start instantly
+            return SentenceTransformer(model_name, local_files_only=True)
+        except Exception:
+            return SentenceTransformer(model_name)
+
     def _ensure_model(self) -> Any:
         if self._model is not None:
             return self._model
         with self._lock:
             if self._model is not None:
                 return self._model
-            from sentence_transformers import SentenceTransformer
 
             primary = self.settings.embedding_model
             fallback = self.settings.embedding_fallback_model
             try:
                 logger.info("Loading embedding model: %s", primary)
-                self._model = SentenceTransformer(primary)
+                self._model = self._load_sentence_transformer(primary)
                 self._active_model_name = primary
             except Exception as exc:
                 logger.warning(
@@ -51,7 +59,7 @@ class EmbeddingService:
                     exc,
                     fallback,
                 )
-                self._model = SentenceTransformer(fallback)
+                self._model = self._load_sentence_transformer(fallback)
                 self._active_model_name = fallback
             return self._model
 

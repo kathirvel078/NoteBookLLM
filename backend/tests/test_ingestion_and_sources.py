@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 from pathlib import Path
 
-import fitz
+import pymupdf as fitz
 from docx import Document as DocxDocument
 from fastapi.testclient import TestClient
 

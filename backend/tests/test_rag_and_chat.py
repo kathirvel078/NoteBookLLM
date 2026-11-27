@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncIterator
 
-import fitz
+import pymupdf as fitz
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.schemas.chat import Citation
 from app.services.ollama_client import OllamaService, get_ollama_service
-from app.services.rag import NO_RELEVANT_INFO_MSG
+from app.services.rag import NO_RELEVANT_INFO_MSG, ensure_grounded_citations
 
 
 def _make_pdf_bytes(pages: list[str]) -> bytes:
@@ -54,6 +55,21 @@ class _FakeRagOllama(OllamaService):
         self.calls.append({"messages": messages, "stream": True})
         for tok in ["Saturn rings ", "contain water ice [1] ", "and dust [42]."]:
             yield tok
+
+
+def test_missing_model_markers_receive_grounded_source_fallback() -> None:
+    citation = Citation(
+        index=1,
+        source_id="source-1",
+        filename="atlas.txt",
+        snippet="Project Atlas launched in 2025.",
+        score=0.9,
+    )
+    answer, used = ensure_grounded_citations(
+        "Project Atlas launched in 2025.", [], [citation]
+    )
+    assert answer.endswith("Sources: [1]")
+    assert used == [citation]
 
 
 def test_rag_chat_citations_history_and_streaming(isolated_env) -> None:

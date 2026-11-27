@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from contextlib import aclosing
+
 from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -46,17 +48,20 @@ async def chat_stream_endpoint(
     ollama_svc: OllamaService = Depends(get_ollama_service),
 ) -> StreamingResponse:
     async def _generator():
-        async for chunk in stream_chat_events(
-            db,
-            notebook_id=payload.notebook_id,
-            message=payload.message,
-            source_ids=payload.source_ids,
-            ollama_svc=ollama_svc,
-            settings=settings,
-        ):
-            if await request.is_disconnected():
-                break
-            yield chunk
+        async with aclosing(
+            stream_chat_events(
+                db,
+                notebook_id=payload.notebook_id,
+                message=payload.message,
+                source_ids=payload.source_ids,
+                ollama_svc=ollama_svc,
+                settings=settings,
+            )
+        ) as stream:
+            async for chunk in stream:
+                if await request.is_disconnected():
+                    break
+                yield chunk
 
     return StreamingResponse(
         _generator(),

@@ -156,36 +156,45 @@ async def retrieve_relevant_chunks(
     query_vec = embedder.embed_query(search_query)
     vector_store = get_vector_store()
 
-    # Global top-k retrieval
-    pool_by_id: dict[str, StoredChunk] = {}
-    global_hits = vector_store.query(
-        notebook_id=notebook_id,
-        query_embedding=query_vec,
-        n_results=cfg.retrieval_top_k,
-        source_ids=ready_source_ids,
-        include_embeddings=True,
-    )
-    for hit in global_hits:
-        pool_by_id[hit.chunk_id] = hit
+    def _retrieve_candidates(embedding: list[float]) -> list[StoredChunk]:
+        """Retrieve global hits plus per-source coverage for a query embedding."""
+        pool_by_id: dict[str, StoredChunk] = {}
+        global_hits = vector_store.query(
+            notebook_id=notebook_id,
+            query_embedding=embedding,
+            n_results=cfg.retrieval_top_k,
+            source_ids=ready_source_ids,
+            include_embeddings=True,
+        )
+        for hit in global_hits:
+            pool_by_id[hit.chunk_id] = hit
 
-    # Ensure multi-document representation when multiple sources are active
-    if len(ready_source_ids) > 1:
-        per_source_k = max(2, cfg.retrieval_top_k // len(ready_source_ids))
-        for sid in ready_source_ids:
-            per_hits = vector_store.query(
-                notebook_id=notebook_id,
-                query_embedding=query_vec,
-                n_results=per_source_k,
-                source_ids=[sid],
-                include_embeddings=True,
-            )
-            for hit in per_hits:
-                pool_by_id.setdefault(hit.chunk_id, hit)
+        # Ensure multi-document representation when multiple sources are active.
+        if len(ready_source_ids) > 1:
+            per_source_k = max(2, cfg.retrieval_top_k // len(ready_source_ids))
+            for sid in ready_source_ids:
+                per_hits = vector_store.query(
+                    notebook_id=notebook_id,
+                    query_embedding=embedding,
+                    n_results=per_source_k,
+                    source_ids=[sid],
+                    include_embeddings=True,
+                )
+                for hit in per_hits:
+                    pool_by_id.setdefault(hit.chunk_id, hit)
+        return list(pool_by_id.values())
 
-    # Apply similarity threshold
-    filtered = [
-        c for c in pool_by_id.values() if c.score >= cfg.retrieval_min_score
-    ]
+    # Apply the similarity threshold to the standalone rewrite first. If that
+    # rewrite loses the user's important keywords, retry the original question
+    # rather than incorrectly reporting that the selected documents lack an answer.
+    candidates = _retrieve_candidates(query_vec)
+    filtered = [c for c in candidates if c.score >= cfg.retrieval_min_score]
+    if not filtered and search_query.strip() != question.strip():
+        search_query = question
+        query_vec = embedder.embed_query(question)
+        candidates = _retrieve_candidates(query_vec)
+        filtered = [c for c in candidates if c.score >= cfg.retrieval_min_score]
+
     if not filtered:
         return search_query, []
 

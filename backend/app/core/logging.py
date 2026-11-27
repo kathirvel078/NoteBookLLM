@@ -46,7 +46,7 @@ def configure_logging(level: str = "INFO") -> None:
     root.addHandler(handler)
 
     # Reduce noisy third-party loggers
-    for noisy in ("chromadb", "sentence_transformers", "httpx", "urllib3"):
+    for noisy in ("chromadb", "sentence_transformers", "httpx", "httpx2", "huggingface_hub", "urllib3"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 

@@ -26,6 +26,10 @@ data/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+*.tsbuildinfo
+frontend/playwright-report/
+frontend/test-results/
+.playwright-data/
 
 # OS / IDE
 .DS_Store

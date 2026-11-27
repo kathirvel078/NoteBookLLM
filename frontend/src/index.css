@@ -8,6 +8,59 @@
   #root {
     height: 100%;
   }
+
+  body {
+    background: #f8fafd;
+    color: #202124;
+    font-family: "Google Sans", "Google Sans Text", Roboto, "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .nb-shell {
+    background:
+      radial-gradient(circle at 6% 0%, rgba(232, 240, 254, 0.92), transparent 28rem),
+      #f8fafd;
+  }
+
+  .dark .nb-shell {
+    background: #10131a;
+  }
+
+  .nb-panel {
+    @apply border border-slate-200/90 bg-white shadow-[0_1px_2px_rgba(60,64,67,0.08)];
+  }
+
+  .dark .nb-panel {
+    @apply border-slate-800 bg-slate-950;
+  }
+
+  .nb-field {
+    @apply border border-slate-300 bg-white shadow-sm outline-none transition placeholder:text-stone-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100;
+  }
+
+  .dark .nb-field {
+    @apply border-slate-700 bg-slate-950 focus:ring-blue-950;
+  }
+
+  .nb-primary {
+    @apply bg-blue-600 text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .nb-icon-button {
+    @apply rounded-full text-stone-600 transition hover:bg-slate-100 hover:text-stone-950 focus:outline-none focus:ring-2 focus:ring-blue-100;
+  }
+
+  .dark .nb-icon-button {
+    @apply text-slate-300 hover:bg-slate-800 hover:text-white focus:ring-blue-950;
+  }
 }
 
 /* Custom subtle scrollbars */

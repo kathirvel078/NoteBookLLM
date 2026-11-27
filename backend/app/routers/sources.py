@@ -55,9 +55,14 @@ async def upload_sources(
         )
 
     staged: list[Source] = []
-    for upload in files:
-        src = await stage_source_upload(db, notebook_id=notebook_id, upload=upload, settings=settings)
-        staged.append(src)
+    try:
+        for upload in files:
+            src = await stage_source_upload(db, notebook_id=notebook_id, upload=upload, settings=settings)
+            staged.append(src)
+    except Exception:
+        for partial in staged:
+            delete_source_and_artifacts(db, partial)
+        raise
 
     for src in staged:
         background_tasks.add_task(process_source_ingestion, src.id)
